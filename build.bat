@@ -1,2 +1,2 @@
-pyinstaller -y -F .\src\ArtStationImageDownloader.py
+pyinstaller -y -F .\src\ImageMergeTool.py
 @pause

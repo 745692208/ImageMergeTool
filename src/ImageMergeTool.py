@@ -1,11 +1,10 @@
-from tkinter import *   #https://docs.python.org/3/library/tk.html、https://www.runoob.com/python/python-gui-tkinter.html
-import tkinter.filedialog   #https://docs.python.org/3/library/dialog.html#module-tkinter.filedialog
-import tkinter.messagebox   #https://docs.python.org/3/library/tkinter.messagebox.html
+from tkinter import *   # https://docs.python.org/3/library/tk.html、https://www.runoob.com/python/python-gui-tkinter.html
+import tkinter.filedialog   # https://docs.python.org/3/library/dialog.html#module-tkinter.filedialog
+import tkinter.messagebox   # https://docs.python.org/3/library/tkinter.messagebox.html
 import PIL.Image as Image   # https://pillow-cn.readthedocs.io/zh_CN/latest/
 import configparser
 import os
 import time
-import sys
 import ctypes
 from ctypes.wintypes import MAX_PATH
 
@@ -15,8 +14,8 @@ buf = ctypes.create_unicode_buffer(MAX_PATH + 1)
 if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
     print(buf.value)
     try:
-        os.mkdir(buf.value + "\ImageMergeTool")
-    except:
+        os.mkdir(buf.value + r"\ImageMergeTool")
+    except Exception():
         print("")
 else:
     print("Failure!")
@@ -25,45 +24,68 @@ else:
 flie_path = buf.value + "\ImageMergeTool\Config.ini"
 
 # ===============函数===============
-def cp_set(option,var):  #写入
+
+
+def cp_set(option, var):  # 写入
     global inifile
-    inifile.set('base',option,var)
+    inifile.set('base', option, var)
     inifile.write(open(flie_path, "w", encoding="utf-8"))
 
-#控件变量save
-def tk_path_save(*args):
-    cp_set('tk_path',tk_path.get())
-def tk_name_save(*args):
-    cp_set('tk_name',tk_name.get())
-def tk_image_num_save(*args):
-    cp_set('tk_image_num',tk_image_num.get())
-def tk_suffix_save(*args):
-    cp_set('tk_suffix',tk_suffix.get())
-def tk_open_folder_save():
-    cp_set('tk_open_folder',str(int(tk_open_folder.get())))
-def tk_del_old_image_save():
-    cp_set('tk_del_old_image',str(int(tk_del_old_image.get())))
-def tk_has_image_num_save():
-    cp_set('tk_has_image_num',str(int(tk_has_image_num.get())))
-def tk_date_sort_save():
-    cp_set('tk_date_sort',str(int(tk_date_sort.get())))    
-def tk_add_suffix_save():
-    cp_set('tk_add_suffix',str(int(tk_add_suffix.get())))   
+# 控件变量save
 
-#控件相关
+
+def tk_path_save(*args):
+    cp_set('tk_path', tk_path.get())
+
+
+def tk_name_save(*args):
+    cp_set('tk_name', tk_name.get())
+
+
+def tk_image_num_save(*args):
+    cp_set('tk_image_num', tk_image_num.get())
+
+
+def tk_suffix_save(*args):
+    cp_set('tk_suffix', tk_suffix.get())
+
+
+def tk_open_folder_save():
+    cp_set('tk_open_folder', str(int(tk_open_folder.get())))
+
+
+def tk_del_old_image_save():
+    cp_set('tk_del_old_image', str(int(tk_del_old_image.get())))
+
+
+def tk_has_image_num_save():
+    cp_set('tk_has_image_num', str(int(tk_has_image_num.get())))
+
+
+def tk_date_sort_save():
+    cp_set('tk_date_sort', str(int(tk_date_sort.get())))
+
+
+def tk_add_suffix_save():
+    cp_set('tk_add_suffix', str(int(tk_add_suffix.get())))
+
+
+# 控件相关
 def select_dir():
-    tk_path.set(tkinter.filedialog.askdirectory())  #设置tk的变量
-    cp_set('tk_path',tk_path.get()) #写入配置
+    tk_path.set(tkinter.filedialog.askdirectory())  # 设置tk的变量
+    cp_set('tk_path',tk_path.get()) # 写入配置
+
 
 def open_folder():
     try:
         os.startfile(tk_path.get() + r"\new")
-    except:
-        message = tkinter.messagebox.showerror("错误", "请输入正确的文件夹路径")
+    except Exception():
+        tkinter.messagebox.showerror("错误", "请输入正确的文件夹路径")
+
 
 def run():
     print("开始")
-    image_format = ['.png','.PNG','.jpg','.JPG'] # 图片格式
+    image_format = ['.png', '.PNG', '.jpg', '.JPG']   # 图片格式
     image_path = tk_path.get() + '/'
     new_image_name = tk_name.get()
     suffix = tk_suffix.get()
@@ -73,21 +95,19 @@ def run():
     # 获取图片并判断名字和数量
     try:
         image_names = [name for name in os.listdir(image_path) for item in image_format if os.path.splitext(name)[1] == item]
-    except:
+    except Exception():
         print("没有找到文件夹")
-        message = tkinter.messagebox.showerror("错误", "请输入正确的文件夹路径")
+        tkinter.messagebox.showerror("错误", "请输入正确的文件夹路径")
         pass
     print(image_names)
     image_column = len(image_names)
     print(tk_date_sort.get())
     if tk_date_sort.get():
         print("按日期排序")
-        image_names = sorted(image_names, key=lambda x: os.path.getmtime(os.path.join(image_path, x)))   #按日期排序
-    #else:
-        #image_names = sorted(image_names)   #按名字排序
+        image_names = sorted(image_names, key=lambda x: os.path.getmtime(os.path.join(image_path, x)))   # 按日期排序
     if tk_has_image_num.get():
         image_column = int(tk_image_num.get())
-        image_names = image_names[len(image_names) - image_column : len(image_names)]   #排除多余贴图
+        image_names = image_names[len(image_names) - image_column : len(image_names)]   # 排除多余贴图
     print(image_names)
     # 获取第一张图片的大小
     print(image_path + image_names[0])
@@ -125,15 +145,15 @@ inifile = configparser.ConfigParser()    # 初始化
 inifile.read(flie_path, encoding="utf-8")
 if not inifile.has_section('base'):  # 检查是否存在section
     inifile.add_section("base")
-    inifile.set('base','tk_path','请输入文件夹路径')
-    inifile.set('base','tk_name','New')
-    inifile.set('base','tk_open_folder','1')
-    inifile.set('base','tk_del_old_image','0')
-    inifile.set('base','tk_image_num','4')
-    inifile.set('base','tk_has_image_num','0')
-    inifile.set('base','tk_date_sort','0')
-    inifile.set('base','tk_suffix','01')
-    inifile.set('base','tk_add_suffix','1')
+    inifile.set('base', 'tk_path', '请输入文件夹路径')
+    inifile.set('base', 'tk_name', 'New')
+    inifile.set('base', 'tk_open_folder', '1')
+    inifile.set('base', 'tk_del_old_image', '0')
+    inifile.set('base', 'tk_image_num', '4')
+    inifile.set('base', 'tk_has_image_num', '0')
+    inifile.set('base', 'tk_date_sort', '0')
+    inifile.set('base', 'tk_suffix', '01')
+    inifile.set('base', 'tk_add_suffix', '1')
     inifile.write(open(flie_path, "w", encoding="utf-8"))
 
 # ===============创建GUI===============
@@ -197,4 +217,4 @@ Button(text='打开文件夹', command=open_folder).grid(row=4, column=0, sticky
 Button(text='执行合并', command=run).grid(row=4, column=1, sticky=EW)
 
 # ===============进入消息循环===============
-top.mainloop()  #开启菜单
+top.mainloop()  # 开启菜单
