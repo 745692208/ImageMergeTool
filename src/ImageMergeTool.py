@@ -1,7 +1,10 @@
-from tkinter import *   # https://docs.python.org/3/library/tk.html、https://www.runoob.com/python/python-gui-tkinter.html
-import tkinter.filedialog   # https://docs.python.org/3/library/dialog.html#module-tkinter.filedialog
-import tkinter.messagebox   # https://docs.python.org/3/library/tkinter.messagebox.html
-import PIL.Image as Image   # https://pillow-cn.readthedocs.io/zh_CN/latest/
+# from tkinter import *
+from tkinter import Tk, Label, Button, Entry  # Frame, Scrollbar, Text
+from tkinter import Checkbutton, messagebox, filedialog
+from tkinter import StringVar, BooleanVar, EW, W
+# BOTTOM, TOP, LEFT, BOTH, X, Y, END, IntVar
+
+import PIL.Image as Image
 import configparser
 import os
 import time
@@ -15,13 +18,13 @@ if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
     print(buf.value)
     try:
         os.mkdir(buf.value + r"\ImageMergeTool")
-    except Exception():
+    except Exception:
         print("")
 else:
     print("Failure!")
 
 # ===============全局变量===============
-flie_path = buf.value + "\ImageMergeTool\Config.ini"
+flie_path = buf.value + r"\ImageMergeTool\Config.ini"
 
 # ===============函数===============
 
@@ -72,20 +75,20 @@ def tk_add_suffix_save():
 
 # 控件相关
 def select_dir():
-    tk_path.set(tkinter.filedialog.askdirectory())  # 设置tk的变量
-    cp_set('tk_path',tk_path.get()) # 写入配置
+    tk_path.set(filedialog.askdirectory())  # 设置tk的变量
+    cp_set('tk_path', tk_path.get())  # 写入配置
 
 
 def open_folder():
     try:
         os.startfile(tk_path.get() + r"\new")
     except Exception():
-        tkinter.messagebox.showerror("错误", "请输入正确的文件夹路径")
+        messagebox.showerror("错误", "请输入正确的文件夹路径")
 
 
 def run():
     print("开始")
-    image_format = ['.png', '.PNG', '.jpg', '.JPG']   # 图片格式
+    image_format = ['.png', '.PNG', '.jpg', '.JPG']
     image_path = tk_path.get() + '/'
     new_image_name = tk_name.get()
     suffix = tk_suffix.get()
@@ -97,7 +100,7 @@ def run():
         image_names = [name for name in os.listdir(image_path) for item in image_format if os.path.splitext(name)[1] == item]
     except Exception():
         print("没有找到文件夹")
-        tkinter.messagebox.showerror("错误", "请输入正确的文件夹路径")
+        messagebox.showerror("错误", "请输入正确的文件夹路径")
         pass
     print(image_names)
     image_column = len(image_names)
@@ -107,13 +110,15 @@ def run():
         image_names = sorted(image_names, key=lambda x: os.path.getmtime(os.path.join(image_path, x)))   # 按日期排序
     if tk_has_image_num.get():
         image_column = int(tk_image_num.get())
-        image_names = image_names[len(image_names) - image_column : len(image_names)]   # 排除多余贴图
+        image_names = image_names[
+            len(image_names) - image_column:len(image_names)]   # 排除多余贴图
     print(image_names)
     # 获取第一张图片的大小
     print(image_path + image_names[0])
     image_size = Image.open(image_path + image_names[0]).size
     # 创建与合并图片， 参考：https://www.cnblogs.com/gisoracle/p/12081967.html
-    new_image = Image.new('RGB', (image_size[0] * image_column, image_size[1]))  # 创建一个新图
+    new_image = Image.new(
+        'RGB', (image_size[0] * image_column, image_size[1]))  # 创建一个新图
     for i in range(0, image_column):
         image_obj = Image.open(image_path + image_names[i])
         new_image.paste(image_obj, (i * image_size[0], 0))
@@ -136,7 +141,9 @@ def run():
 
 # ===============Run===============
 # configparser 初始化
-# 没有文件就创建
+# 没有文件就创建
+
+
 if os.path.exists(flie_path) == 0:
     print("没找到ini，创建一个新文件")
     inifile = open(flie_path, "w", encoding="utf-8")
@@ -157,48 +164,46 @@ if not inifile.has_section('base'):  # 检查是否存在section
     inifile.write(open(flie_path, "w", encoding="utf-8"))
 
 # ===============创建GUI===============
-top = Tk()  #创建GUI
-top.title('图片合并工具v1.0 by levosaber')   #设置标题名字
-top.geometry('340x150+1000+300')    #设置窗口大小、位置
+top = Tk()  # 创建GUI
+top.title('图片合并工具v1.0 by levosaber')   # 设置标题名字
 
 # TK的变量和python的变量不同，因为要实时追踪相关原因，必须在Tk()函数下才能使用
 tk_path = StringVar()
-tk_path.set(inifile.get('base','tk_path'))
+tk_path.set(inifile.get('base', 'tk_path'))
 tk_path.trace_add('write', tk_path_save)
 
 tk_name = StringVar()
-tk_name.set(inifile.get('base','tk_name'))
+tk_name.set(inifile.get('base', 'tk_name'))
 tk_name.trace_add('write', tk_name_save)
 
 tk_image_num = StringVar()
-tk_image_num.set(inifile.get('base','tk_image_num'))
+tk_image_num.set(inifile.get('base', 'tk_image_num'))
 tk_image_num.trace_add('write', tk_image_num_save)
 
 tk_suffix = StringVar()
-tk_suffix.set(inifile.get('base','tk_suffix'))
+tk_suffix.set(inifile.get('base', 'tk_suffix'))
 tk_suffix.trace_add('write', tk_suffix_save)
 
 tk_open_folder = BooleanVar()
-tk_open_folder.set(inifile.get('base','tk_open_folder'))
+tk_open_folder.set(inifile.get('base', 'tk_open_folder'))
 
 tk_del_old_image = BooleanVar()
-tk_del_old_image.set(inifile.get('base','tk_del_old_image'))
+tk_del_old_image.set(inifile.get('base', 'tk_del_old_image'))
 
 tk_has_image_num = BooleanVar()
-tk_has_image_num.set(inifile.get('base','tk_has_image_num'))
+tk_has_image_num.set(inifile.get('base', 'tk_has_image_num'))
 
 tk_date_sort = BooleanVar()
-tk_date_sort.set(inifile.get('base','tk_date_sort'))
+tk_date_sort.set(inifile.get('base', 'tk_date_sort'))
 
 tk_add_suffix = BooleanVar()
-tk_add_suffix.set(inifile.get('base','tk_add_suffix'))
-
+tk_add_suffix.set(inifile.get('base', 'tk_add_suffix'))
 
 
 # ===============创建控件===============
 Label(text='文件夹路径：').grid()
 Entry(textvariable=tk_path).grid(row=0, column=1)
-Button(text='浏览', command = select_dir).grid(row=0, column=2, sticky=EW)
+Button(text='浏览', command=select_dir).grid(row=0, column=2, sticky=EW)
 
 Label(text='新名字：').grid(row=1, column=0)
 Entry(textvariable=tk_name).grid(row=1, column=1)
