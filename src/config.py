@@ -20,34 +20,33 @@ class Config:
         flie_path = buf.value + r"\{}\Config.ini".format(name)
         return flie_path
 
-
-def read_config(config_file_path, field, key):
-    cf = configparser.ConfigParser()
-    try:
-        cf.read(config_file_path)
-        if field in cf:
-            result = cf[field][key]
-        else:
+    def read_config(self, config_file_path, field, key):
+        cf = configparser.ConfigParser()
+        try:
+            cf.read(config_file_path)
+            if field in cf:
+                result = cf[field][key]
+            else:
+                return ''
+        except Exception:
             return ''
-    except configparser.Error as e:
-        print(e)
-        return ''
-    return result
+        return result
 
-
-def write_config(config_file_path, field, key, value):
-    cf = configparser.ConfigParser()
-    try:
-        cf.read(config_file_path)
-        if field not in cf:
-            cf.add_section(field)
-        cf[field][key] = value
-        cf.write(open(config_file_path, 'w'))
-    except configparser.Error as e:
-        print(e)
-        return False
-    return True
+    def write_config(self, config_file_path, field, key, value):
+        cf = configparser.ConfigParser()
+        try:
+            cf.read(config_file_path)
+            if field not in cf:
+                cf.add_section(field)
+            cf[field][key] = value
+            cf.write(open(config_file_path, 'w'))
+        except Exception:
+            return False
+        return True
 
 
 if __name__ == "__main__":
     print('test')
+    cf = Config()
+    cf.write_config(
+        r'D:\Administrator\Documents\GUI\1.ini', 'a', 'key', 'valur')
