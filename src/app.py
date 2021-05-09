@@ -119,6 +119,7 @@ class App:
         self.core = core.Core()
         self.top = Tk()
         self.top.title('{} {} {}'.format(name, version, suffix))   # 设置标题名字
+        self.top.iconbitmap(r'.\icon\icon.ico')
         self.cf = config.Config()
         self.cf_path = self.cf.make_conf_dir(name)
         self.create_widget()

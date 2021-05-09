@@ -1,2 +1,2 @@
-pyinstaller -y -F .\src\ImageMergeTool.py
+pyinstaller -y -F -i .\icon\icon.ico .\src\ImageMergeTool.py
 @pause
