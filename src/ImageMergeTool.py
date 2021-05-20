@@ -14,7 +14,7 @@ class core:
     def __init__(self):
         self.cf = config.Config('', 1, '')
         self.path = ''
-        self.image_format = ['.png', '.PNG', '.jpg', '.JPG', 'psd', 'PSD']
+        self.image_format = ['.png', '.PNG', '.jpg', '.JPG']
 
     def convert_image_path(self, image_path_list):
         a = []
@@ -103,9 +103,9 @@ class App:
         self.create_widget()
         self.changeTab()
 
-    def merge_image(self, images):
+    def merge_image(self, images, path):
         self.core.merge_image(
-            self.entry_path.get(), images, self.name.get(),
+            path, images, self.name.get(),
             self.b_OkOpen.get(), self.b_DelOldFile.get(),
             self.b_create_folder.get(), self.b_add_date.get()
         )
@@ -115,10 +115,10 @@ class App:
         self.cf.save('base', 'name', self.name.get())
         if self.tab_index.get() == 0:
             images = self.core.convert_image_path(self.select_images)
-            self.merge_image(images)
+            self.merge_image(images, self.select_images[0].rsplit('/', 1)[0])
         elif self.tab_index.get() == 1:
             images = self.core.get_dir_images_path(self.entry_path.get())
-            self.merge_image(images)
+            self.merge_image(images, self.entry_path.get())
 
     def check_menu(self):
         web.open('https://github.com/745692208/ImageMergeTool')
@@ -126,7 +126,7 @@ class App:
     def select_files(self):
         files = filedialog.askopenfilenames(
             title="Select Image file",
-            filetypes=(("Image", "*.png *.jpg *.psd"),)
+            filetypes=(("Image", "*.png *.jpg"),)
         )
         self.select_images = files
         self.select_num_hint.set('共选择：{} 张图片'.format(len(files)))
