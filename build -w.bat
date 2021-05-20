@@ -1,2 +1,2 @@
-pyinstaller -y --windowed -F -i .\icon\icon.ico .\src\ImageMergeTool.py
+pyinstaller -y --windowed -F -i .\res\icon.ico .\src\ImageMergeTool.py
 @pause

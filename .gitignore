@@ -1,0 +1,9 @@
+*.pyc
+*.spec
+*.ini
+.vscode
+__pycache__
+ck
+dist
+build
+test
