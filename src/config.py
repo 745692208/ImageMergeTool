@@ -29,6 +29,7 @@ class Config:
 
     def save(self, field, key, value):
         cf = configparser.ConfigParser()
+        value = str(value)
         try:
             cf.read(self.path, encoding="utf-8")
             if field not in cf:
