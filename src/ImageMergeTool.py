@@ -53,9 +53,9 @@ class core:
         # 新图片名字添加日期
         if b_add_date:
             time_date = time.strftime("%y-%m-%d")
-            name = '{}_{}.jpg'.format(name, time_date)
+            name = '{}_{}.png'.format(name, time_date)
         else:
-            name = '{}.jpg'.format(name)
+            name = '{}.png'.format(name)
         # 合成图片
         print(path + name)
         image_num = len(images_path)  # 获取总图片数量
@@ -227,7 +227,7 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App('ImageMergeTool', '2.0.0', '')
+    app = App('ImageMergeTool', '2.0.1', '')
     app.app.mainloop()
     app.app.quit()
     sys.exit()
