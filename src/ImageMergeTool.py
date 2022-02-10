@@ -231,7 +231,7 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App('ImageMergeTool', '2.0.1', '')
+    app = App('ImageMergeTool', '2.0.2', '')
     app.app.mainloop()
     app.app.quit()
     sys.exit()
