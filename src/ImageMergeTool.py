@@ -158,7 +158,7 @@ class App:
     def create_widget(self):
         # GUI初始化
         menubar = tk.Menu(self.app)
-        menubar.add_command(label='关于', command=self.check_menu)
+        menubar.add_command(label='可直接拖入文件合成图片', command=self.check_menu)
         self.app['menu'] = menubar
         # 1 第0行 标签容器 创建标签
         fTab = tk.Frame(self.app)
