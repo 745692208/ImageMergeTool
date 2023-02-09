@@ -8,6 +8,7 @@ import os
 
 import PIL.Image as Image
 import config
+import windnd  # pip install windnd
 
 
 class core:
@@ -25,19 +26,14 @@ class core:
     def get_dir_images_path(self, path):
         '''输出：yangchen0927-485gn2-1.jpg'''
         try:
-            image_names = [
-                name for name in os.listdir(path) for item in self.image_format
-                if os.path.splitext(name)[1] == item
-            ]
+            image_names = [name for name in os.listdir(path) for item in self.image_format if os.path.splitext(name)[1] == item]
         except Exception as e:
             print("没有找到文件夹", e)
             messagebox.showerror("错误", "请输入正确的文件夹路径")
             return
         return image_names
 
-    def merge_image(
-            self, path, images_path, name,
-            b_OkOpen, b_DelOldFile, b_create_folder, b_add_date):
+    def merge_image(self, path, images_path, name, b_OkOpen, b_DelOldFile, b_create_folder, b_add_date):
         # 防止没有图片或图片太少问题
         if len(images_path) < 2:
             messagebox.showerror("错误", "路径里没有合适的图片")
@@ -106,13 +102,17 @@ class App:
         self.ftab_list = []
         self.create_widget()
         self.changeTab()
+        # 绑定拖入事件
+        windnd.hook_dropfiles(self.app, self.dropfile)
+
+    def dropfile(self, ls):
+        print(ls)
+        ls = [i.decode().replace('\\', '/') for i in ls]
+        self.select_images = ls
+        self.run()
 
     def merge_image(self, images, path):
-        self.core.merge_image(
-            path, images, self.name.get(),
-            self.b_OkOpen.get(), self.b_DelOldFile.get(),
-            self.b_create_folder.get(), self.b_add_date.get()
-        )
+        self.core.merge_image(path, images, self.name.get(), self.b_OkOpen.get(), self.b_DelOldFile.get(), self.b_create_folder.get(), self.b_add_date.get())
 
     def run(self):
         self.cf.save('base', 'entry_path', self.entry_path.get())
@@ -128,10 +128,7 @@ class App:
         web.open('https://github.com/745692208/ImageMergeTool')
 
     def select_files(self):
-        files = filedialog.askopenfilenames(
-            title="Select Image file",
-            filetypes=(("Image", "*.png *.jpg"),)
-        )
+        files = filedialog.askopenfilenames(title="Select Image file", filetypes=(("Image", "*.png *.jpg"), ))
         self.select_images = files
         self.select_num_hint.set('共选择：{} 张图片'.format(len(files)))
         print(files)
@@ -231,7 +228,7 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App('ImageMergeTool', '2.0.2', '')
+    app = App('ImageMergeTool', '2.1.0', '')
     app.app.mainloop()
     app.app.quit()
     sys.exit()
