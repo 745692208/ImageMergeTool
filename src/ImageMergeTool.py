@@ -53,26 +53,50 @@ class core:
         else:
             name = '{}.png'.format(name)
         print(path + name)
-        # 获取所有图片加起来的总宽度
-        newImage_size = 0
-        newImage_size_list = [0]
-        for image in images_path:
-            image_size = Image.open(path + image).size  # 获取第一张图大小
-            newImage_size = newImage_size + image_size[0]
-            newImage_size_list.append(newImage_size)
-        new_image = Image.new('RGB', (newImage_size, image_size[1]))  # 创建一个新图
-        # 合成图片
-        for i, image in enumerate(images_path):
-            image_obj = Image.open(path + image)
-            new_image.paste(image_obj, (newImage_size_list[i], 0))
-        new_image.save(save_path + name)  # 保存图片，如：d:\asd\1.jpg
-        # 打开合并图片所在地
-        if b_OkOpen:
-            os.startfile(save_path)
-        # 删除旧文件
-        if b_DelOldFile:
+        if 1:
+            # 获取所有图片加起来的总宽度
+            newImage_size = 0
+            newImage_size_list = [0]
+            size_list = [Image.open(path + image).size for image in images_path]
+            image_size = max(size_list)
             for image in images_path:
-                os.remove(path + image)
+                # image_size = Image.open(path + image).size  # 获取第一张图大小
+                newImage_size = newImage_size + image_size[0]
+                newImage_size_list.append(newImage_size)
+            new_image = Image.new('RGB', (newImage_size, image_size[1]))  # 创建一个新图
+            # 合成图片
+            for i, image in enumerate(images_path):
+                image_obj = Image.open(path + image)
+                new_image.paste(image_obj, (newImage_size_list[i], 0))
+            new_image.save(save_path + name)  # 保存图片，如：d:\asd\1.jpg
+            # 打开合并图片所在地
+            if b_OkOpen:
+                os.startfile(save_path)
+            # 删除旧文件
+            if b_DelOldFile:
+                for image in images_path:
+                    os.remove(path + image)
+        else:  # old
+            # 获取所有图片加起来的总宽度
+            newImage_size = 0
+            newImage_size_list = [0]
+            for image in images_path:
+                image_size = Image.open(path + image).size  # 获取第一张图大小
+                newImage_size = newImage_size + image_size[0]
+                newImage_size_list.append(newImage_size)
+            new_image = Image.new('RGB', (newImage_size, image_size[1]))  # 创建一个新图
+            # 合成图片
+            for i, image in enumerate(images_path):
+                image_obj = Image.open(path + image)
+                new_image.paste(image_obj, (newImage_size_list[i], 0))
+            new_image.save(save_path + name)  # 保存图片，如：d:\asd\1.jpg
+            # 打开合并图片所在地
+            if b_OkOpen:
+                os.startfile(save_path)
+            # 删除旧文件
+            if b_DelOldFile:
+                for image in images_path:
+                    os.remove(path + image)
 
 
 class App:
