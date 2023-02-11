@@ -12,6 +12,7 @@ import windnd  # pip install windnd
 
 
 class core:
+
     def __init__(self):
         self.cf = config.Config('', 1, '')
         self.path = ''
@@ -53,53 +54,28 @@ class core:
         else:
             name = '{}.png'.format(name)
         print(path + name)
-        if 1:
-            # 获取所有图片加起来的总宽度
-            newImage_size = 0
-            newImage_size_list = [0]
-            size_list = [Image.open(path + image).size for image in images_path]
-            image_size = max(size_list)
+        # 获取所有图片加起来的总宽度
+        image_objs = [Image.open(path + image) for image in images_path]
+        # 合成图片 x=宽width, y=高high
+        size_y = max([i.size[1] for i in image_objs])
+        size_x_list = [i.size[0] for i in image_objs]
+        size_x = 0
+        new_image = Image.new('RGB', (sum(size_x_list), size_y))  # 创建一个新图
+        for i, image in enumerate(image_objs):
+            new_image.paste(image, (size_x, 0))
+            size_x += image.size[0]
+        new_image.save(save_path + name)  # 保存图片，如：d:\asd\1.jpg
+        # 打开合并图片所在地
+        if b_OkOpen:
+            os.startfile(save_path)
+        # 删除旧文件
+        if b_DelOldFile:
             for image in images_path:
-                # image_size = Image.open(path + image).size  # 获取第一张图大小
-                newImage_size = newImage_size + image_size[0]
-                newImage_size_list.append(newImage_size)
-            new_image = Image.new('RGB', (newImage_size, image_size[1]))  # 创建一个新图
-            # 合成图片
-            for i, image in enumerate(images_path):
-                image_obj = Image.open(path + image)
-                new_image.paste(image_obj, (newImage_size_list[i], 0))
-            new_image.save(save_path + name)  # 保存图片，如：d:\asd\1.jpg
-            # 打开合并图片所在地
-            if b_OkOpen:
-                os.startfile(save_path)
-            # 删除旧文件
-            if b_DelOldFile:
-                for image in images_path:
-                    os.remove(path + image)
-        else:  # old
-            # 获取所有图片加起来的总宽度
-            newImage_size = 0
-            newImage_size_list = [0]
-            for image in images_path:
-                image_size = Image.open(path + image).size  # 获取第一张图大小
-                newImage_size = newImage_size + image_size[0]
-                newImage_size_list.append(newImage_size)
-            new_image = Image.new('RGB', (newImage_size, image_size[1]))  # 创建一个新图
-            # 合成图片
-            for i, image in enumerate(images_path):
-                image_obj = Image.open(path + image)
-                new_image.paste(image_obj, (newImage_size_list[i], 0))
-            new_image.save(save_path + name)  # 保存图片，如：d:\asd\1.jpg
-            # 打开合并图片所在地
-            if b_OkOpen:
-                os.startfile(save_path)
-            # 删除旧文件
-            if b_DelOldFile:
-                for image in images_path:
-                    os.remove(path + image)
+                os.remove(path + image)
 
 
 class App:
+
     def __init__(self, title, ver, suffix):
         self.cf = config.Config(title, 0, './')
         self.core = core()
@@ -127,11 +103,12 @@ class App:
         self.create_widget()
         self.changeTab()
         # 绑定拖入事件
-        windnd.hook_dropfiles(self.app, self.dropfile)
+        windnd.hook_dropfiles(self.app, self.dropfile, True)
 
     def dropfile(self, ls):
+        # ls = sorted(ls)
+        ls = [i.replace('\\', '/') for i in ls]
         print(ls)
-        ls = [i.decode().replace('\\', '/') for i in ls]
         self.select_images = ls
         self.run()
 
@@ -252,7 +229,7 @@ class App:
 
 
 if __name__ == '__main__':
-    app = App('ImageMergeTool', '2.1.0', '')
+    app = App('ImageMergeTool', '2.1.1', '')
     app.app.mainloop()
     app.app.quit()
     sys.exit()
