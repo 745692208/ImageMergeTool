@@ -6,10 +6,26 @@ from ctypes.wintypes import MAX_PATH
 
 
 class Config:
+    def __init__(self, name, bIsCustomPath, *custom_path) -> None:
+        """Config
+        :param name, str, 默认文件夹和ini的名字。
+        :param bIsCustomPath, bool, 是否使用特定的ini保存路径，不使用的话会保持在我的文档里。
+        :param *custom_path, str, 使用上面的参数后，这里需要输入自定义保存的路径。"""
+        self.cf = configparser.ConfigParser()
+        if bIsCustomPath:
+            self.path = custom_path[0] + name + ".ini"
+        else:
+            self.path = self.make_conf_dir(name)
+            print(self.path)
+
+    def get_filepath(self) -> str:
+        """获取.ini文件保存地址."""
+        return self.path
+
     def load(self, field, key, *failValue):
-        ''':param *failValue, None, 读取失败后，返回的值。默认返回'';'''
+        """:param *failValue, None, 读取失败后，返回的值。默认返回'';"""
         if len(failValue) == 0:
-            failValue = ''
+            failValue = ""
         else:
             failValue = failValue[0]
         cf = configparser.ConfigParser()
@@ -17,13 +33,13 @@ class Config:
             cf.read(self.path, encoding="utf-8")
             if field in cf:
                 result = cf.get(field, key)
-                print('load-{}-{}'.format(field, key))
+                print("load-{}-{}".format(field, key))
             else:
-                print('读取失败，不存在field')
+                print("读取失败，不存在field")
                 return failValue
         except Exception as e:
             print(e)
-            print('读取失败')
+            print("读取失败")
             return failValue
         return result
 
@@ -36,10 +52,10 @@ class Config:
                 cf.add_section(field)
             cf.set(field, key, value)
             cf.write(open(self.path, "w", encoding="utf-8"))
-            print('save-{}-{}-{}'.format(field, key, value))
+            print("save-{}-{}-{}".format(field, key, value))
         except Exception as e:
             print(e)
-            print('写入失败')
+            print("写入失败")
             return False
         return True
 
@@ -81,22 +97,10 @@ class Config:
                 cf_data[section][option] = self.load(section, option)
         return cf_data
 
-    def __init__(self, name, bIsCustomPath, *custom_path) -> None:
-        '''Config
-        :param name, str, 默认文件夹和ini的名字。
-        :param bIsCustomPath, bool, 是否使用特定的ini保存路径，不使用的话会保持在我的文档里。
-        :param *custom_path, str, 使用上面的参数后，这里需要输入自定义保存的路径。'''
-        self.cf = configparser.ConfigParser()
-        if bIsCustomPath:
-            self.path = custom_path[0] + name + '.ini'
-        else:
-            self.path = self.make_conf_dir(name)
-            print(self.path)
-
 
 if __name__ == "__main__":
-    print('test')
-    cf = Config('test', True, './')
-    cf.save('a', 'key', 'valur')
-    cf.load('a', 'key')
-    print(cf.load('b', 'key'))
+    print("test")
+    cf = Config("test", True, "./")
+    cf.save("a", "key", "valur")
+    cf.load("a", "key")
+    print(cf.load("b", "key"))
