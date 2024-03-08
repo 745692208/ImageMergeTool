@@ -14,8 +14,6 @@ import windnd  # pip install windnd
 class core:
     def __init__(self):
         self.cf = config.Config("", 1, "")
-        self.path = ""
-        self.image_format = [".png", ".PNG", ".jpg", ".JPG"]
 
     def convert_image_path(self, image_path_list) -> list[str]:
         """[filepath] -> [filename]"""
@@ -24,15 +22,17 @@ class core:
             a.append(str.rsplit("/", 1)[1])
         return a
 
-    def get_dir_images_path(self, path):
-        """输出: yangchen0927-485gn2-1.jpg"""
+    def get_dir_images_path(self, path) -> list[str]:
+        """找到文件夹里支持格式的图片名字, 如: ["yangchen0927-485gn2-1.jpg", ]"""
+        return os.listdir(path)
         try:
-            image_names = [name for name in os.listdir(path) for item in self.image_format if os.path.splitext(name)[1] == item]
+            exts = [".png", ".PNG", ".jpg", ".JPG"]
+            r = [n for n in os.listdir(path) if os.path.splitext(n)[1] in exts]
         except Exception as e:
             print("没有找到文件夹", e)
             messagebox.showerror("错误", "请输入正确的文件夹路径")
             return
-        return image_names
+        return r
 
     def merge_image(self, dirpath, image_names, name, b_OkOpen, b_DelOldFile, b_create_folder, b_add_date, b_add_index):
         """
@@ -103,6 +103,7 @@ class App:
         # GUI
         self.app = tk.Tk()
         self.app.title(f"{title} {ver} {suffix}")
+        self.app.minsize(350, 0)  # 设置最低size
         self.tab_index = tk.IntVar()
         self.tab_index.set(self.cf.load("base", "tab_index", 0))
         # Options
@@ -167,24 +168,30 @@ class App:
         self.on_run()
 
     def on_run(self):
+        filepaths = [i for i in self.select_images if os.path.isfile(i)]
+        dirpaths = [i for i in self.select_images if os.path.isdir(i)]
         if self.tab_index.get() == 0:
             # file path
-            filepaths = [i for i in self.select_images if os.path.isfile(i)]
             if filepaths:
-                images = self.core.convert_image_path(filepaths)
-                self.merge_image(images, self.select_images[0].rsplit("/", 1)[0])
+                names = self.core.convert_image_path(filepaths)
+                dirpath = self.select_images[0].rsplit("/", 1)[0]
+                self.merge_image(dirpath, names)
             # dir path
-            dirpaths = [i for i in self.select_images if os.path.isdir(i)]
             for path in dirpaths:
-                images = self.core.get_dir_images_path(path)
-                self.merge_image(images, path)
+                names = self.core.get_dir_images_path(path)
+                self.merge_image(path, names)
         elif self.tab_index.get() == 1:
-            [self.core.separator_rgb(i) for i in self.select_images]
+            if filepaths:
+                [self.core.separator_rgb(i) for i in filepaths]
+            for path in dirpaths:
+                names = self.core.get_dir_images_path(path)
+                dir_filepaths = [os.path.join(path, n) for n in names]
+                [self.core.separator_rgb(i) for i in dir_filepaths]
 
-    def merge_image(self, images, path):
+    def merge_image(self, dirpath, names):
         self.core.merge_image(
-            path,
-            images,
+            dirpath,
+            names,
             self.name.get(),
             self.b_OkOpen.get(),
             self.b_DelOldFile.get(),
@@ -199,7 +206,7 @@ class App:
         options = tk.Menu(menubar, tearoff=0)
         options.add_command(label="Open.ini", command=self.on_open_config)
         options.add_command(label="About", command=self.on_about)
-        menubar.add_cascade(label="可直接拖入图片文件", menu=options)
+        menubar.add_cascade(label="可拖入图片文件或图片文件夹", menu=options)
         self.app["menu"] = menubar
         # 第零行 标签容器 and 创建标签
         fTab = tk.Frame(self.app)
@@ -248,5 +255,5 @@ class App:
 
 
 if __name__ == "__main__":
-    app = App("ImageTools", "1.0.0", "by levosaber")
+    app = App("ImageMergeTool", "2.2.0", "")
     app.app.mainloop()
