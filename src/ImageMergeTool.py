@@ -34,7 +34,7 @@ class core:
             return
         return r
 
-    def merge_image(self, dirpath, image_names, name, b_OkOpen, b_DelOldFile, b_create_folder, b_add_date, b_add_index):
+    def merge_image(self, dirpath, image_names, name, b_OkOpen, b_DelOldFile, b_create_folder, b_add_date, b_add_index, format="jpg", quality=95):
         """
         ::param dirpath: "d:/test"
         ::param image_names 图片的名字: "name.png"
@@ -56,7 +56,7 @@ class core:
         if b_add_index:
             index = 1
             new_filename = f"{name}_{index:02d}"
-            while os.path.exists(os.path.join(save_dirpath, f"{new_filename}.png")):
+            while os.path.exists(os.path.join(save_dirpath, f"{new_filename}.{format}")):
                 index += 1
                 new_filename = f"{name}_{index:02d}"
             name = new_filename
@@ -71,7 +71,7 @@ class core:
             new_image.paste(image, (size_x, 0))
             size_x += image.size[0]
         # 保存图片
-        new_image.save(os.path.join(save_dirpath, f"{name}.png"))  # 保存图片, 如: d:\asd\1.jpg
+        new_image.save(os.path.join(save_dirpath, f"{name}.{format}"), quality=quality)  # 保存图片, 如: d:\asd\1.jpg
         # 打开合并图片所在地
         if b_OkOpen:
             os.startfile(save_dirpath)
@@ -119,6 +119,8 @@ class App:
         self.b_OkOpen.set(self.cf.load("base", "b_OkOpen", "1"))
         self.b_create_folder = tk.IntVar()
         self.b_create_folder.set(self.cf.load("base", "b_create_folder", "1"))
+        self.b_use_jpg = tk.IntVar()
+        self.b_use_jpg.set(self.cf.load("base", "b_use_jpg", "1"))
         self.select_num_hint = tk.StringVar()
         self.select_num_hint.set("共选择: 0 张图片")
         self.ftab_list = []
@@ -137,6 +139,8 @@ class App:
         self.cf.save("base", "b_add_index", self.b_add_index.get())
         self.cf.save("base", "b_DelOldFile", self.b_DelOldFile.get())
         self.cf.save("base", "b_create_folder", self.b_create_folder.get())
+        self.cf.save("base", "b_use_jpg", self.b_use_jpg.get())
+        
         # Exit
         self.app.quit()
         sys.exit()
@@ -164,6 +168,7 @@ class App:
     def on_dropfile(self, ls):
         print(ls)
         ls = [i.replace("\\", "/") for i in ls]
+        ls.sort()
         self.select_images = ls
         self.on_run()
 
@@ -198,6 +203,7 @@ class App:
             self.b_create_folder.get(),
             self.b_add_date.get(),
             self.b_add_index.get(),
+            "jpg" if self.b_use_jpg.get() else "png",
         )
 
     def create_widget(self):
@@ -232,6 +238,7 @@ class App:
         ttk.Entry(f_name, textvariable=self.name).pack(side="left", fill="x", expand=1)
         ttk.Checkbutton(f_name, text="添加日期", variable=self.b_add_date).pack(side="left")
         ttk.Checkbutton(f_name, text="添加序号", variable=self.b_add_index).pack(side="left")
+        ttk.Checkbutton(f_name, text="JPG", variable=self.b_use_jpg).pack(side="left")
         lf_cb = tk.Frame(tab1_2_options)
         lf_cb.pack(side="top", fill="x")
         ttk.Checkbutton(lf_cb, text="删除旧文件", variable=self.b_DelOldFile).pack(side="left")
@@ -255,5 +262,5 @@ class App:
 
 
 if __name__ == "__main__":
-    app = App("ImageMergeTool", "2.2.0", "")
+    app = App("ImageMergeTool", "2.2.1", "")
     app.app.mainloop()
