@@ -1,3 +1,4 @@
+import enum
 from tkinter import ttk
 from tkinter import filedialog, messagebox
 import tkinter as tk
@@ -60,12 +61,16 @@ class core:
                 index += 1
                 new_filename = f"{name}_{index:02d}"
             name = new_filename
-        # 获取所有图片加起来的总宽度
+        # 获取所有图片高度并得出最高的图片
         image_objs = [Image.open(os.path.join(dirpath, n)) for n in image_names]
-        # 合成图片 x=宽width, y=高high
         size_y = max([i.size[1] for i in image_objs])
+        # resize所有图片，等比放大，并计算宽度总和
+        for i, im in enumerate(image_objs):
+            ratio = size_y / im.size[1]
+            image_objs[i] = im.resize((int(im.size[0] * ratio), int(im.size[1] * ratio)))
         size_x_list = [i.size[0] for i in image_objs]
         size_x = 0
+        # 合成图片并保存
         new_image = Image.new("RGB", (sum(size_x_list), size_y))  # 创建一个新图
         for i, image in enumerate(image_objs):
             new_image.paste(image, (size_x, 0))
@@ -140,7 +145,7 @@ class App:
         self.cf.save("base", "b_DelOldFile", self.b_DelOldFile.get())
         self.cf.save("base", "b_create_folder", self.b_create_folder.get())
         self.cf.save("base", "b_use_jpg", self.b_use_jpg.get())
-        
+
         # Exit
         self.app.quit()
         sys.exit()
@@ -262,5 +267,5 @@ class App:
 
 
 if __name__ == "__main__":
-    app = App("ImageMergeTool", "2.2.1", "")
+    app = App("ImageMergeTool", "2.2.2", "")
     app.app.mainloop()
