@@ -1,4 +1,3 @@
-import enum
 from tkinter import ttk
 from tkinter import filedialog, messagebox
 import tkinter as tk
@@ -26,14 +25,6 @@ class core:
     def get_dir_images_path(self, path) -> list[str]:
         """找到文件夹里支持格式的图片名字, 如: ["yangchen0927-485gn2-1.jpg", ]"""
         return os.listdir(path)
-        try:
-            exts = [".png", ".PNG", ".jpg", ".JPG"]
-            r = [n for n in os.listdir(path) if os.path.splitext(n)[1] in exts]
-        except Exception as e:
-            print("没有找到文件夹", e)
-            messagebox.showerror("错误", "请输入正确的文件夹路径")
-            return
-        return r
 
     def merge_image(self, dirpath, image_names, name, b_OkOpen, b_DelOldFile, b_create_folder, b_add_date, b_add_index, format="jpg", quality=95):
         """
@@ -48,7 +39,7 @@ class core:
         # 创建new文件夹并设置path
         save_dirpath = dirpath
         if b_create_folder:
-            save_dirpath = os.path.join(save_dirpath, "new")
+            save_dirpath = os.path.join(save_dirpath, "New")
             os.makedirs(save_dirpath, exist_ok=True)
         # 新图片名字添加日期
         if b_add_date:
@@ -113,7 +104,12 @@ class App:
         self.tab_index.set(self.cf.load("base", "tab_index", 0))
         # Options
         self.name = tk.StringVar()
-        self.name.set(self.cf.load("base", "name", "new"))
+        self.name.set(self.cf.load("base", "name", "New"))
+        # 名字列表（用 | 分隔存储）
+        name_list_str = self.cf.load("base", "name_list", "New")
+        self.name_list = [n for n in name_list_str.split("|") if n]
+        if not self.name_list:
+            self.name_list = ["New"]
         self.b_add_date = tk.IntVar()
         self.b_add_date.set(self.cf.load("base", "b_add_date", "1"))
         self.b_add_index = tk.IntVar()
@@ -124,10 +120,12 @@ class App:
         self.b_OkOpen.set(self.cf.load("base", "b_OkOpen", "1"))
         self.b_create_folder = tk.IntVar()
         self.b_create_folder.set(self.cf.load("base", "b_create_folder", "1"))
-        self.b_use_jpg = tk.IntVar()
-        self.b_use_jpg.set(self.cf.load("base", "b_use_jpg", "1"))
+        # 格式下拉框（默认 JPG）
+        self.format = tk.StringVar()
+        self.format.set(self.cf.load("base", "format", "JPG"))
         self.select_num_hint = tk.StringVar()
         self.select_num_hint.set("共选择: 0 张图片")
+        self.select_images = []
         self.ftab_list = []
         self.create_widget()
         self.on_change_tab()
@@ -138,13 +136,14 @@ class App:
     def on_close(self):
         # Save data
         self.cf.save("base", "name", self.name.get())
+        self.cf.save("base", "name_list", "|".join(self.name_list))
         self.cf.save("base", "b_OkOpen", self.b_OkOpen.get())
         self.cf.save("base", "tab_index", str(self.tab_index.get()))
         self.cf.save("base", "b_add_date", self.b_add_date.get())
         self.cf.save("base", "b_add_index", self.b_add_index.get())
         self.cf.save("base", "b_DelOldFile", self.b_DelOldFile.get())
         self.cf.save("base", "b_create_folder", self.b_create_folder.get())
-        self.cf.save("base", "b_use_jpg", self.b_use_jpg.get())
+        self.cf.save("base", "format", self.format.get())  # 保存格式
 
         # Exit
         self.app.quit()
@@ -172,10 +171,36 @@ class App:
 
     def on_dropfile(self, ls):
         print(ls)
-        ls = [i.replace("\\", "/") for i in ls]
+        ls = [i.decode("gbk").replace("\\", "/") if isinstance(i, bytes) else i.replace("\\", "/") for i in ls]
         ls.sort()
         self.select_images = ls
         self.on_run()
+
+    def on_add_name(self):
+        """把当前输入框的名字添加到下拉列表"""
+        name = self.name.get().strip()
+        if not name:
+            messagebox.showwarning("提示", "名字不能为空")
+            return
+        if name in self.name_list:
+            messagebox.showinfo("提示", "该名字已存在")
+            return
+        self.name_list.append(name)
+        self.name_combobox["values"] = self.name_list
+
+    def on_del_name(self):
+        """从下拉列表删除当前名字"""
+        name = self.name.get().strip()
+        if name in self.name_list:
+            self.name_list.remove(name)
+            self.name_combobox["values"] = self.name_list
+            # 删除后自动选中列表中的第一个（如果还有）
+            if self.name_list:
+                self.name.set(self.name_list[0])
+            else:
+                self.name.set("")
+        else:
+            messagebox.showinfo("提示", "列表中没有该名字")
 
     def on_run(self):
         filepaths = [i for i in self.select_images if os.path.isfile(i)]
@@ -199,6 +224,8 @@ class App:
                 [self.core.separator_rgb(i) for i in dir_filepaths]
 
     def merge_image(self, dirpath, names):
+        # 根据下拉框选择决定格式
+        fmt = "jpg" if self.format.get().upper() == "JPG" else "png"
         self.core.merge_image(
             dirpath,
             names,
@@ -208,7 +235,7 @@ class App:
             self.b_create_folder.get(),
             self.b_add_date.get(),
             self.b_add_index.get(),
-            "jpg" if self.b_use_jpg.get() else "png",
+            fmt,
         )
 
     def create_widget(self):
@@ -239,33 +266,41 @@ class App:
         tab1_2_options.pack(side="top", fill="x")
         f_name = ttk.Frame(tab1_2_options)
         f_name.pack(side="top", fill="x")
-        tk.Label(f_name, text="Name: ").pack(side="left")
-        ttk.Entry(f_name, textvariable=self.name).pack(side="left", fill="x", expand=1)
-        ttk.Checkbutton(f_name, text="添加日期", variable=self.b_add_date).pack(side="left")
-        ttk.Checkbutton(f_name, text="添加序号", variable=self.b_add_index).pack(side="left")
-        ttk.Checkbutton(f_name, text="JPG", variable=self.b_use_jpg).pack(side="left")
+        tk.Label(f_name, text="名字: ").pack(side="left")
+        # 可编辑下拉框：既能手动输入，也能从列表选择
+        self.name_combobox = ttk.Combobox(f_name, textvariable=self.name, values=self.name_list)
+        self.name_combobox.pack(side="left", fill="x", expand=1)
+        ttk.Button(f_name, text="+", width=2, command=self.on_add_name).pack(side="left")
+        ttk.Button(f_name, text="-", width=2, command=self.on_del_name).pack(side="left")
+        # 选项第二行
+        row = tk.Frame(tab1_2_options)
+        row.pack(side="top", fill="x")
+        # 格式下拉框（只读，不允许手动输入，默认 JPG）
+        ttk.Label(row, text="格式: ").pack(side="left")
+        self.format_combobox = ttk.Combobox(row, textvariable=self.format, values=["JPG", "PNG"], width=5, state="readonly")
+        self.format_combobox.pack(side="left")
+        # 其它
+        ttk.Checkbutton(row, text="添加日期", variable=self.b_add_date).pack(side="left")
+        ttk.Checkbutton(row, text="添加序号", variable=self.b_add_index).pack(side="left")
+        # 选项第三行
         lf_cb = tk.Frame(tab1_2_options)
         lf_cb.pack(side="top", fill="x")
         ttk.Checkbutton(lf_cb, text="删除旧文件", variable=self.b_DelOldFile).pack(side="left")
         ttk.Checkbutton(lf_cb, text="创建New文件夹", variable=self.b_create_folder).pack(side="left")
         ttk.Checkbutton(lf_cb, text="完成后打开文件夹", variable=self.b_OkOpen).pack(side="left")
+
         lf_button = tk.Frame(tab1_2_options)
         lf_button.pack(side="top", fill="x")
         ttk.Button(lf_button, text="合并", command=self.on_run).pack(side="left", fill="both", expand=1)
 
-        # Tab 2 分离颜色通道 共用选择文件UI
+        # Tab 2 分离颜色通道
         tab2_0 = ttk.Frame(self.app)
-        tab2_0.pack(side="top", fill="x")
         self.ftab_list.append(tab2_0)
-        tab2_1_select = ttk.LabelFrame(tab2_0, text="Select Images")
-        tab2_1_select.pack(side="top", fill="x")
-        tk.Label(tab2_1_select, textvariable=self.select_num_hint, anchor="w").pack(side="left", fill="x", expand=1)
-        ttk.Button(tab2_1_select, text="选择文件", command=self.on_select_files).pack(side="left")
-        tab2_2 = ttk.Frame(tab2_0)
-        tab2_2.pack(side="top", fill="x")
-        ttk.Button(tab2_2, text="分离", command=self.on_run).pack(side="left", fill="both", expand=1)
+        tab2_hint = ttk.LabelFrame(tab2_0, text="分离颜色通道")
+        tab2_hint.pack(side="top", fill="x")
+        tk.Label(tab2_hint, text="拖入图片或文件夹，自动分离 R/G/B/A 通道", anchor="w").pack(side="left", fill="x", expand=1)
 
 
 if __name__ == "__main__":
-    app = App("ImageMergeTool", "2.2.2", "")
+    app = App("ImageMergeTool", "2.3.0", "")
     app.app.mainloop()
