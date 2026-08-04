@@ -238,6 +238,10 @@ class App:
             fmt,
         )
 
+    def toggle_topmost(self):
+        # 获取当前状态并取反
+        self.app.attributes("-topmost", self.topmost_var.get())
+
     def create_widget(self):
         # GUI初始化
         menubar = tk.Menu(self.app)
@@ -251,6 +255,12 @@ class App:
         fTab.pack(side="top", fill="x")
         for i, name in enumerate(["合并图片", "分离颜色通道"]):
             ttk.Radiobutton(fTab, text=name, value=i, variable=self.tab_index, command=self.on_change_tab).pack(side="left")
+
+        # 置顶
+        self.topmost_var = tk.BooleanVar(value=False)  # 默认勾选
+
+        self.pin_chk = tk.Checkbutton(fTab, text="📌", variable=self.topmost_var, command=self.toggle_topmost)
+        self.pin_chk.pack(side="right")
 
         # Tab 1 合并图片
         # 第一行 选择图片
@@ -302,5 +312,5 @@ class App:
 
 
 if __name__ == "__main__":
-    app = App("ImageMergeTool", "2.3.0", "")
+    app = App("ImageMergeTool", "2.4.0", "")
     app.app.mainloop()
