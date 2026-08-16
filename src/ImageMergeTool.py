@@ -5,21 +5,100 @@ import webbrowser as web
 import time
 import sys
 import os
+import re
+import json
 
 import PIL.Image as Image
-import config
 import windnd  # pip install windnd
 
+import ctypes
+from ctypes.wintypes import MAX_PATH
 
+
+# ==================== Config (JSON) ====================
+class Config:
+    def __init__(self, title="", bIsCustomPath=0, dirpath="./"):
+        self.title = title
+        self.flag = bIsCustomPath
+        self.dirpath = dirpath
+
+        # 配置文件路径，如: ./ImageMergeTool.json
+        if bIsCustomPath:
+            filename = f"{title}.json" if title else "config.json"
+            self._filepath = os.path.join(dirpath, filename)
+        else:
+            self._filepath = self.make_conf_dir(title)
+
+        self._data = {}
+        self._read()
+
+    def make_conf_dir(self, name="") -> str:
+        # 获取我的文档路径，并创建目录
+        directory_name = "LS_Toolkit"
+        dll = ctypes.windll.shell32
+        buf = ctypes.create_unicode_buffer(MAX_PATH + 1)
+        if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
+            print(buf.value)
+            try:
+                os.mkdir(f"{buf.value}\\{directory_name}")
+            except Exception as e:
+                print(e)
+        else:
+            print("Failure!")
+        flie_path = f"{buf.value}\\{directory_name}\\{name}.json"
+        return flie_path
+
+    def get_filepath(self):
+        return self._filepath
+
+    def _read(self):
+        """从磁盘读取整个 json"""
+        if os.path.exists(self._filepath):
+            try:
+                with open(self._filepath, "r", encoding="utf-8") as f:
+                    self._data = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                self._data = {}
+        else:
+            self._data = {}
+
+    def _write(self):
+        """把内存数据写入磁盘"""
+        try:
+            with open(self._filepath, "w", encoding="utf-8") as f:
+                json.dump(self._data, f, ensure_ascii=False, indent=4)
+        except OSError as e:
+            print(f"[Config] 写入失败: {e}")
+
+    def load(self, section, key, default=None):
+        """读取配置。兼容: cf.load("base", "name", "New")"""
+        return self._data.get(section, {}).get(key, default)
+
+    def save(self, section, key, value):
+        """保存配置并立即写入磁盘。兼容: cf.save("base", "name", "New")"""
+        if section not in self._data:
+            self._data[section] = {}
+        self._data[section][key] = value
+        self._write()
+
+
+# ==================== 工具函数 ====================
+def _natural_key(s):
+    """自然排序 key: New1, New2, New10 而不是 New1, New10, New2"""
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
+
+
+# ==================== 核心逻辑 ====================
 class core:
     def __init__(self):
-        self.cf = config.Config("", 1, "")
+        self.cf: Config = None
+        pass
 
-    def convert_image_path(self, image_path_list) -> list[str]:
+    def convert_image_path(self, image_path_list) -> list:
         """[filepath] -> [filename]"""
         a = []
-        for str in image_path_list:
-            a.append(str.rsplit("/", 1)[1])
+        for s in image_path_list:
+            a.append(s.rsplit("/", 1)[1])
         return a
 
     def get_dir_images_path(self, path) -> list[str]:
@@ -91,9 +170,10 @@ class core:
             c.save(savepath)
 
 
+# ==================== GUI ====================
 class App:
     def __init__(self, title, ver, suffix):
-        self.cf = config.Config(title, 0, "./")
+        self.cf = Config(title, 0, "./")
         self.core = core()
         self.core.cf = self.cf
         # GUI
@@ -101,25 +181,29 @@ class App:
         self.app.title(f"{title} {ver} {suffix}")
         self.app.minsize(350, 0)  # 设置最低size
         self.tab_index = tk.IntVar()
-        self.tab_index.set(self.cf.load("base", "tab_index", 0))
+        self.tab_index.set(int(self.cf.load("base", "tab_index", 0)))
         # Options
         self.name = tk.StringVar()
         self.name.set(self.cf.load("base", "name", "New"))
-        # 名字列表（用 | 分隔存储）
-        name_list_str = self.cf.load("base", "name_list", "New")
-        self.name_list = [n for n in name_list_str.split("|") if n]
-        if not self.name_list:
-            self.name_list = ["New"]
+        # 名字列表（JSON 里直接存为 list）
+        name_list = self.cf.load("base", "name_list", ["New"])
+        if isinstance(name_list, str):  # 兼容旧的 "|" 分隔字符串
+            name_list = [n for n in name_list.split("|") if n]
+        self.name_list = name_list if name_list else ["New"]
+        self.name_list = sorted(set(self.name_list), key=_natural_key)  # 去重+自然排序
+
+        self.topmost_var = tk.BooleanVar(value=False)
+        self.topmost_var.set(int(self.cf.load("base", "topmost_var", 0)))
         self.b_add_date = tk.IntVar()
-        self.b_add_date.set(self.cf.load("base", "b_add_date", "1"))
+        self.b_add_date.set(int(self.cf.load("base", "b_add_date", 1)))
         self.b_add_index = tk.IntVar()
-        self.b_add_index.set(self.cf.load("base", "b_add_index", "1"))
+        self.b_add_index.set(int(self.cf.load("base", "b_add_index", 1)))
         self.b_DelOldFile = tk.IntVar()
-        self.b_DelOldFile.set(self.cf.load("base", "b_DelOldFile", "0"))
+        self.b_DelOldFile.set(int(self.cf.load("base", "b_DelOldFile", 0)))
         self.b_OkOpen = tk.IntVar()
-        self.b_OkOpen.set(self.cf.load("base", "b_OkOpen", "1"))
+        self.b_OkOpen.set(int(self.cf.load("base", "b_OkOpen", 1)))
         self.b_create_folder = tk.IntVar()
-        self.b_create_folder.set(self.cf.load("base", "b_create_folder", "1"))
+        self.b_create_folder.set(int(self.cf.load("base", "b_create_folder", 1)))
         # 格式下拉框（默认 JPG）
         self.format = tk.StringVar()
         self.format.set(self.cf.load("base", "format", "JPG"))
@@ -136,14 +220,15 @@ class App:
     def on_close(self):
         # Save data
         self.cf.save("base", "name", self.name.get())
-        self.cf.save("base", "name_list", "|".join(self.name_list))
+        self.cf.save("base", "name_list", self.name_list)  # 直接存 list
         self.cf.save("base", "b_OkOpen", self.b_OkOpen.get())
-        self.cf.save("base", "tab_index", str(self.tab_index.get()))
+        self.cf.save("base", "tab_index", self.tab_index.get())
         self.cf.save("base", "b_add_date", self.b_add_date.get())
         self.cf.save("base", "b_add_index", self.b_add_index.get())
         self.cf.save("base", "b_DelOldFile", self.b_DelOldFile.get())
         self.cf.save("base", "b_create_folder", self.b_create_folder.get())
-        self.cf.save("base", "format", self.format.get())  # 保存格式
+        self.cf.save("base", "format", self.format.get())
+        self.cf.save("base", "topmost_var", self.topmost_var.get())
 
         # Exit
         self.app.quit()
@@ -161,7 +246,7 @@ class App:
         index = self.tab_index.get()
         for ftab in self.ftab_list:
             ftab.pack_forget()
-        self.ftab_list[index].pack(fill="x")
+        self.ftab_list[index].pack(side="top", fill="both", expand=1)
 
     def on_select_files(self):
         files = filedialog.askopenfilenames(title="Select Image file", filetypes=(("Image", "*.png *.jpg"),))
@@ -186,6 +271,7 @@ class App:
             messagebox.showinfo("提示", "该名字已存在")
             return
         self.name_list.append(name)
+        self.name_list = sorted(set(self.name_list), key=_natural_key)  # 自然排序
         self.name_combobox["values"] = self.name_list
 
     def on_del_name(self):
@@ -193,6 +279,7 @@ class App:
         name = self.name.get().strip()
         if name in self.name_list:
             self.name_list.remove(name)
+            self.name_list = sorted(set(self.name_list), key=_natural_key)  # 自然排序
             self.name_combobox["values"] = self.name_list
             # 删除后自动选中列表中的第一个（如果还有）
             if self.name_list:
@@ -257,8 +344,6 @@ class App:
             ttk.Radiobutton(fTab, text=name, value=i, variable=self.tab_index, command=self.on_change_tab).pack(side="left")
 
         # 置顶
-        self.topmost_var = tk.BooleanVar(value=False)  # 默认勾选
-
         self.pin_chk = tk.Checkbutton(fTab, text="📌", variable=self.topmost_var, command=self.toggle_topmost)
         self.pin_chk.pack(side="right")
 
@@ -273,7 +358,7 @@ class App:
         ttk.Button(tab1_1_select, text="选择文件", command=self.on_select_files).pack(side="left")
         # 第二行 选项
         tab1_2_options = ttk.LabelFrame(tab1_0, text="Option")
-        tab1_2_options.pack(side="top", fill="x")
+        tab1_2_options.pack(side="top", fill="both", expand=1)
         f_name = ttk.Frame(tab1_2_options)
         f_name.pack(side="top", fill="x")
         tk.Label(f_name, text="名字: ").pack(side="left")
@@ -300,17 +385,30 @@ class App:
         ttk.Checkbutton(lf_cb, text="完成后打开文件夹", variable=self.b_OkOpen).pack(side="left")
 
         lf_button = tk.Frame(tab1_2_options)
-        lf_button.pack(side="top", fill="x")
-        ttk.Button(lf_button, text="合并", command=self.on_run).pack(side="left", fill="both", expand=1)
+        # lf_button.pack(side="bottom", fill="both", expand=1)
+        lf_button.pack(fill="both", expand=1)
+        ttk.Button(lf_button, text="合并", command=self.on_run).pack(fill="both", expand=1)
 
-        # Tab 2 分离颜色通道
-        tab2_0 = ttk.Frame(self.app)
-        self.ftab_list.append(tab2_0)
-        tab2_hint = ttk.LabelFrame(tab2_0, text="分离颜色通道")
-        tab2_hint.pack(side="top", fill="x")
-        tk.Label(tab2_hint, text="拖入图片或文件夹，自动分离 R/G/B/A 通道", anchor="w").pack(side="left", fill="x", expand=1)
+        # ==================== Tab 2 分离颜色通道 ====================
+        tab2 = ttk.Frame(self.app)
+        tab2.pack(side="top", fill="both", expand=1)
+        self.ftab_list.append(tab2)
+        tab2_hint = ttk.LabelFrame(tab2, text="分离颜色通道")
+        tab2_hint.pack(fill="both", expand=1)
+        ttk.Label(tab2_hint, text="拖入图片或文件夹即可分离 RGBA 通道").pack(pady=6)
+        ttk.Button(tab2_hint, text="选择图片并分离", command=self._run_separate).pack(fill="both", expand=1)
+
+    def _run_separate(self):
+        files = filedialog.askopenfilenames(title="Select Image file", filetypes=(("Image", "*.png *.jpg"),))
+        for f in files:
+            self.core.separator_rgb(f.replace("\\", "/"))
+        if files:
+            messagebox.showinfo("完成", "通道分离完成")
+
+    def run(self):
+        self.app.mainloop()
 
 
 if __name__ == "__main__":
-    app = App("ImageMergeTool", "2.4.0", "")
-    app.app.mainloop()
+    app = App("ImageMergeTool", "2.4.1", "")
+    app.run()
