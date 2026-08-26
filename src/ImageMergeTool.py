@@ -194,6 +194,7 @@ class App:
 
         self.topmost_var = tk.BooleanVar(value=False)
         self.topmost_var.set(int(self.cf.load("base", "topmost_var", 0)))
+        self.toggle_topmost()
         self.b_add_date = tk.IntVar()
         self.b_add_date.set(int(self.cf.load("base", "b_add_date", 1)))
         self.b_add_index = tk.IntVar()
@@ -410,5 +411,5 @@ class App:
 
 
 if __name__ == "__main__":
-    app = App("ImageMergeTool", "2.4.1", "")
+    app = App("ImageMergeTool", "2.4.2", "")
     app.run()
